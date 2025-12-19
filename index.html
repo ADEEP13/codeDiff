@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Comparison Tool - Professional Diff Analyzer</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #0f172a;
+            --primary-light: #1e293b;
+            --accent: #3b82f6;
+            --accent-dark: #1d4ed8;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --bg: #f8fafc;
+            --dark: #1f2937;
+            --text: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --shadow-lg: 0 20px 40px rgba(0, 0, 0, 0.12);
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 50%, #f1f5f9 100%);
+            min-height: 100vh;
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 70px;
+            background: white;
+            border-bottom: 1px solid var(--border);
+            box-shadow: var(--shadow-sm);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            padding: 0 40px;
+        }
+
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+            font-size: 1.3em;
+            color: var(--text);
+        }
+
+        .navbar-brand .icon {
+            font-size: 1.5em;
+        }
+
+        .navbar-spacer {
+            flex: 1;
+        }
+
+        .navbar-links {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+        }
+
+        .navbar-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.95em;
+            transition: color 0.3s ease;
+        }
+
+        .navbar-links a:hover {
+            color: var(--accent);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 100px 40px 40px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .header h1 {
+            font-size: 3.5em;
+            color: var(--text);
+            margin-bottom: 15px;
+            font-weight: 800;
+            letter-spacing: -1px;
+            background: linear-gradient(135deg, #0f172a 0%, #3b82f6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            color: var(--text-muted);
+            font-size: 1.15em;
+            font-weight: 400;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .input-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+            background: white;
+            padding: 35px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-md);
+        }
+
+        .code-input-box {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .code-input-box label {
+            font-weight: 600;
+            color: var(--text);
+            font-size: 0.95em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 0.8em;
+            color: var(--text-muted);
+        }
+
+        .label-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            background: #e0e7ff;
+            border-radius: 20px;
+            font-size: 0.75em;
+            margin-left: 8px;
+            font-weight: 600;
+            color: var(--accent);
+        }
+
+        .code-input-box textarea {
+            width: 100%;
+            height: 360px;
+            padding: 20px;
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            background-color: #f8fafc;
+            font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+            font-size: 13px;
+            resize: vertical;
+            line-height: 1.7;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .code-input-box textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1), var(--shadow-sm);
+            background-color: white;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 13px 32px;
+            font-size: 0.95em;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            letter-spacing: 0.3px;
+            text-transform: capitalize;
+            font-size: 0.9em;
+        }
+
+        .compare-btn {
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+            border: 1px solid var(--accent);
+        }
+
+        .compare-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+        }
+
+        .compare-btn:active {
+            transform: translateY(0px);
+        }
+
+        .clear-btn {
+            background: white;
+            color: var(--danger);
+            border: 1.5px solid var(--danger);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .clear-btn:hover {
+            background: #fef2f2;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(239, 68, 68, 0.2);
+        }
+
+        .clear-btn:active {
+            transform: translateY(0px);
+        }
+
+        .results-section {
+            display: none;
+            background: white;
+            border-radius: 12px;
+            padding: 35px;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border);
+            animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .results-section.active {
+            display: block;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            padding: 25px;
+            border-radius: 10px;
+            text-align: center;
+            color: white;
+            font-weight: 600;
+            box-shadow: var(--shadow-md);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .stat-added {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+
+        .stat-removed {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+
+        .stat-total {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        }
+
+        .stat-unchanged {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+        }
+
+        .stat-number {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .stat-label {
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            opacity: 0.95;
+            font-weight: 500;
+        }
+
+        .diff-display {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+        }
+
+        .diff-column {
+            background-color: white;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .diff-column-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white;
+            padding: 16px 20px;
+            font-weight: 600;
+            font-size: 0.95em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .diff-lines {
+            padding: 15px 0;
+            max-height: 650px;
+            overflow-y: auto;
+        }
+
+        .diff-line {
+            padding: 10px 16px;
+            margin: 0;
+            font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+            font-size: 12.5px;
+            line-height: 1.7;
+            white-space: pre-wrap;
+            word-break: break-all;
+            border-left: 4px solid;
+            transition: background-color 0.2s ease;
+        }
+
+        .diff-line:hover {
+            background-color: rgba(0, 0, 0, 0.02);
+        }
+
+        .added {
+            background-color: #f0fdf4;
+            color: #166534;
+            border-left-color: var(--success);
+        }
+
+        .removed {
+            background-color: #fef2f2;
+            color: #991b1b;
+            border-left-color: var(--danger);
+        }
+
+        .unchanged {
+            background-color: #f8fafc;
+            color: #475569;
+            border-left-color: #cbd5e1;
+            opacity: 0.85;
+        }
+
+        .line-number {
+            color: #94a3b8;
+            margin-right: 12px;
+            font-weight: 600;
+            display: inline-block;
+            width: 36px;
+            text-align: right;
+            user-select: none;
+        }
+
+        .line-content {
+            display: inline;
+        }
+
+        .no-changes {
+            text-align: center;
+            padding: 50px 30px;
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-radius: 10px;
+            color: #92400e;
+            font-weight: 600;
+            font-size: 1.05em;
+            border: 1px solid #fcd34d;
+        }
+
+        .spinner {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .spinner.active {
+            display: block;
+        }
+
+        .loading {
+            border: 3px solid rgba(59, 130, 246, 0.1);
+            border-top: 3px solid var(--accent);
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .copy-btn {
+            padding: 6px 12px;
+            font-size: 0.75em;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-transform: capitalize;
+        }
+
+        .copy-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        @media (max-width: 1200px) {
+            .input-section {
+                grid-template-columns: 1fr;
+            }
+
+            .diff-display {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 0 20px;
+            }
+
+            .header h1 {
+                font-size: 2.2em;
+            }
+
+            .container {
+                padding: 100px 20px 40px;
+            }
+
+            .input-section {
+                padding: 20px;
+            }
+
+            .stats-container {
+                grid-template-columns: 1fr;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            button {
+                width: 100%;
+            }
+
+            .results-section {
+                padding: 20px;
+            }
+
+            .navbar-links {
+                display: none;
+            }
+        }
+
+        /* Scrollbar styling */
+        .diff-lines::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .diff-lines::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .diff-lines::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+
+        .diff-lines::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        textarea::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        textarea::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        textarea::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+
+        textarea::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <span class="icon">⚡</span>
+            <span>CodeDiff</span>
+        </div>
+        <div class="navbar-spacer"></div>
+        <div class="navbar-links">
+            <a href="#features">Features</a>
+            <a href="#about">About</a>
+            <a href="#contact">Contact</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="header">
+            <h1>Compare Your Code Instantly</h1>
+            <p>Analyze differences between two code snippets with beautiful visual highlighting and detailed statistics</p>
+        </div>
+
+        <div class="input-section">
+            <div class="code-input-box">
+                <label for="code1">Original Code <span class="label-badge">Code 1</span></label>
+                <textarea id="code1" placeholder="Paste your original code here...&#10;Supports all programming languages"></textarea>
+            </div>
+            <div class="code-input-box">
+                <label for="code2">Modified Code <span class="label-badge">Code 2</span></label>
+                <textarea id="code2" placeholder="Paste your modified code here...&#10;Changes will be highlighted automatically"></textarea>
+            </div>
+        </div>
+
+        <div class="button-group">
+            <button class="compare-btn" onclick="compareCode()">📊 Compare Codes</button>
+            <button class="clear-btn" onclick="clearAll()">Reset</button>
+        </div>
+
+        <div class="spinner" id="spinner">
+            <div class="loading"></div>
+        </div>
+
+        <div class="results-section" id="resultsSection">
+            <div class="stats-container" id="statsContainer"></div>
+            <div id="diffContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        function compareCode() {
+            const code1 = document.getElementById('code1').value;
+            const code2 = document.getElementById('code2').value;
+
+            if (!code1.trim() || !code2.trim()) {
+                alert('⚠️ Please paste code in both fields');
+                return;
+            }
+
+            showSpinner(true);
+
+            // Simulate processing delay
+            setTimeout(() => {
+                const result = computeDiff(code1, code2);
+                displayResults(result);
+                showSpinner(false);
+            }, 400);
+        }
+
+        function computeDiff(code1, code2) {
+            const lines1 = code1.split('\n');
+            const lines2 = code2.split('\n');
+
+            const diff = simpleLineDiff(lines1, lines2);
+            
+            return {
+                original: diff.original,
+                modified: diff.modified,
+                stats: diff.stats
+            };
+        }
+
+        function simpleLineDiff(lines1, lines2) {
+            const original = [];
+            const modified = [];
+            let added = 0, removed = 0, unchanged = 0;
+
+            const maxLength = Math.max(lines1.length, lines2.length);
+
+            for (let i = 0; i < maxLength; i++) {
+                const line1 = lines1[i] !== undefined ? lines1[i] : '';
+                const line2 = lines2[i] !== undefined ? lines2[i] : '';
+
+                if (line1 === line2) {
+                    original.push({ type: 'unchanged', content: line1, lineNum: i + 1 });
+                    modified.push({ type: 'unchanged', content: line2, lineNum: i + 1 });
+                    unchanged++;
+                } else {
+                    if (i < lines1.length) {
+                        original.push({ type: 'removed', content: line1, lineNum: i + 1 });
+                        removed++;
+                    }
+                    if (i < lines2.length) {
+                        modified.push({ type: 'added', content: line2, lineNum: i + 1 });
+                        added++;
+                    }
+                }
+            }
+
+            return {
+                original,
+                modified,
+                stats: { added, removed, unchanged, total: maxLength }
+            };
+        }
+
+        function displayResults(result) {
+            const resultsSection = document.getElementById('resultsSection');
+            const statsContainer = document.getElementById('statsContainer');
+            const diffContainer = document.getElementById('diffContainer');
+
+            // Display stats
+            const { added, removed, unchanged, total } = result.stats;
+            const similarity = total > 0 ? Math.round((unchanged / total) * 100) : 0;
+
+            statsContainer.innerHTML = `
+                <div class="stat-card stat-added">
+                    <div class="stat-number">+${added}</div>
+                    <div class="stat-label">Lines Added</div>
+                </div>
+                <div class="stat-card stat-removed">
+                    <div class="stat-number">-${removed}</div>
+                    <div class="stat-label">Lines Removed</div>
+                </div>
+                <div class="stat-card stat-unchanged">
+                    <div class="stat-number">${unchanged}</div>
+                    <div class="stat-label">Lines Unchanged</div>
+                </div>
+                <div class="stat-card stat-total">
+                    <div class="stat-number">${similarity}%</div>
+                    <div class="stat-label">Similarity</div>
+                </div>
+            `;
+
+            // Display diff
+            if (added === 0 && removed === 0) {
+                diffContainer.innerHTML = '<div class="no-changes">✅ No changes detected! Both codes are identical.</div>';
+            } else {
+                const originalHtml = result.original.map((line, idx) => 
+                    `<div class="diff-line ${line.type}"><span class="line-number">${String(line.lineNum).padStart(3, ' ')}</span><span class="line-content">${escapeHtml(line.content || '(empty line)')}</span></div>`
+                ).join('');
+
+                const modifiedHtml = result.modified.map((line, idx) => 
+                    `<div class="diff-line ${line.type}"><span class="line-number">${String(line.lineNum).padStart(3, ' ')}</span><span class="line-content">${escapeHtml(line.content || '(empty line)')}</span></div>`
+                ).join('');
+
+                diffContainer.innerHTML = `
+                    <div class="diff-display">
+                        <div class="diff-column">
+                            <div class="diff-column-header">
+                                Code 1 - Original
+                                <button class="copy-btn" onclick="copyToClipboard('original')">📋 Copy</button>
+                            </div>
+                            <div class="diff-lines">${originalHtml}</div>
+                        </div>
+                        <div class="diff-column">
+                            <div class="diff-column-header">
+                                Code 2 - Modified
+                                <button class="copy-btn" onclick="copyToClipboard('modified')">📋 Copy</button>
+                            </div>
+                            <div class="diff-lines">${modifiedHtml}</div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            resultsSection.classList.add('active');
+            resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function copyToClipboard(type) {
+            const code1 = document.getElementById('code1').value;
+            const code2 = document.getElementById('code2').value;
+            const textToCopy = type === 'original' ? code1 : code2;
+
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = '✅ Copied!';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                }, 2000);
+            });
+        }
+
+        function clearAll() {
+            document.getElementById('code1').value = '';
+            document.getElementById('code2').value = '';
+            document.getElementById('resultsSection').classList.remove('active');
+            document.getElementById('code1').focus();
+        }
+
+        function showSpinner(show) {
+            const spinner = document.getElementById('spinner');
+            if (show) {
+                spinner.classList.add('active');
+            } else {
+                spinner.classList.remove('active');
+            }
+        }
+
+        // Allow Enter + Ctrl to compare
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'Enter') {
+                compareCode();
+            }
+        });
+
+        // Focus on first input on load
+        window.addEventListener('load', () => {
+            document.getElementById('code1').focus();
+        });
+    </script>
+</body>
+</html>
